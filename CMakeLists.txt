@@ -1,16 +1,3 @@
-# Copyright 2012 Cloudera Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
 cmake_minimum_required(VERSION 2.6)
 
@@ -21,7 +8,8 @@ set(EXECUTABLE_OUTPUT_PATH "build")
 
 find_program(CLANG_EXECUTABLE clang++)
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -ggdb")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -ggdb -fPIC")
+
 
 # Function to generate rule to cross compile a source file to an IR module.
 # This should be called with the .cc src file and it will generate a
@@ -38,21 +26,20 @@ function(COMPILE_TO_IR SRC_FILE)
   add_custom_target(${BASE_NAME}-ir ALL DEPENDS ${OUTPUT_FILE})
 endfunction(COMPILE_TO_IR)
 
-# Build the UDA/UDFs into a shared library.
-add_library(udfsample SHARED udf-sample.cc)
-add_library(udasample SHARED uda-sample.cc hyperloglog-uda.cc variance-uda.cc)
+add_library(xpath SHARED xpath.cpp)
+
+add_library(pugixml STATIC pugixml.cpp)
+
+#set (EXTRA_LIBS ${EXTRA_LIBS} pugixml)
 
 # Custom targest to cross compile UDA/UDF to ir
 if (CLANG_EXECUTABLE)
-  COMPILE_TO_IR(udf-sample.cc )
-  COMPILE_TO_IR(uda-sample.cc )
+  COMPILE_TO_IR(xpath.cpp)
 endif(CLANG_EXECUTABLE)
 
 # This is an example of how to use the test harness to help develop UDF and UDAs.
-target_link_libraries(udfsample ImpalaUdf)
-target_link_libraries(udasample ImpalaUdf)
-add_executable(udf-sample-test udf-sample-test.cc)
-target_link_libraries(udf-sample-test udfsample)
-add_executable(uda-sample-test uda-sample-test.cc)
-target_link_libraries(uda-sample-test udasample)
+target_link_libraries(xpath ImpalaUdf)
+target_link_libraries(xpath pugixml)
+add_executable(xpath-test xpath-test.cpp)
+target_link_libraries(xpath-test xpath)
 
